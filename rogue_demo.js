@@ -1,18 +1,24 @@
-var map = '##+#########' +  // todo: remove player, creatures, objects
-        '\n#@....######' +
-        '\n#...R.##...#' +
-        '\n#.$...##.w.#' +
-        '\n###+####...#' +
-        '\n###....=..w#' +
-        '\n########...#' +
-        '\n############';
+var map = [ [ '#', '#', '+', '#', '#', '#', '#', '#', '#', '#', '#', '#' ], // todo: remove player, creatures, objects
+            [ '#', '@', '.', '.', '.', '.', '#', '#', '#', '#', '#', '#' ],
+            [ '#', '.', '.', '.', 'R', '.', '#', '#', '.', '.', '.', '#' ],
+            [ '#', '.', '$', '.', '.', '.', '#', '#', '.', 'w', '.', '#' ],
+            [ '#', '#', '#', '+', '#', '#', '#', '#', '.', '.', '.', '#' ],
+            [ '#', '#', '#', '.', '.', '.', '.', '=', '.', '.', 'w', '#' ],
+            [ '#', '#', '#', '#', '#', '#', '#', '#', '.', '.', '.', '#' ],
+            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
+            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
+            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
+            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
+            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
+          ];
 
-function MapDraw(map) {
-  return '<pre>' + map.toString() + '</pre>';
-}
+var RenderCell =              cell => '<td>' + cell.toString() + '</td>',
+    RenderRow  =               row => '<tr>' + (row.map(RenderCell).join('')) + '</tr>',
+    RenderMap  =           mapdata => '<table><tbody>' + (mapdata.map(RenderRow).join('')) + '</tbody></table>',
+    mapStringToGameMap = mapString => mapString.split('\n').map( row => row.split() );
 
 function onStart() {
-  document.body.innerHTML = MapDraw(map);
+  document.body.innerHTML = RenderMap(map);
 }
 
 window.onload = onStart;
