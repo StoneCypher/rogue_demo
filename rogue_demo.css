@@ -15,7 +15,8 @@ body                  { background-color: #eee; }
 /* add a tr to the rule for topkinds to force a precedence win */
 #gamemap tr td.player   { color: cyan; }
 #gamemap tr td.person   { color: white; }
-#gamemap tr td.monster  { color: red; }
-#gamemap tr td.item     { color: green; }
+#gamemap tr td.reptile  { color: green; }
+#gamemap tr td.worm     { color: puce; }
+#gamemap tr td.item     { color: blue; }
 #gamemap tr td.treasure { color: gold; }
 #gamemap tr td.door     { color: silver; font-weight: bold; }

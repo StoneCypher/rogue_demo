@@ -445,26 +445,118 @@ Usually, though not always, the top style will let the bottom background color t
 
 One way to achieve this is through CSS precedence.  Make a slightly more specific rule for top rules (we will use `<tr>` in the top rules but not in the bottom rules to get this result.)  Let the cascade handle the rest.
 
-#gamemap    td.wall   { background-color: dimgray;     color: silver; }
-#gamemap    td.floor  { background-color: saddlebrown; color: moccasin; }
+    #gamemap    td.wall   { background-color: dimgray;     color: silver; }
+    #gamemap    td.floor  { background-color: saddlebrown; color: moccasin; }
 
-#gamemap tr td.player { color: cyan; }
+    #gamemap tr td.player { color: cyan; }
 
 This allows the player to stand on floor and get a brown background, but to override the floor's yellowish foreground with cyan.
 
 Now we extend this to the other rules we want initially:
 
-#gamemap    td.wall     { background-color: dimgray;     color: gray; }
-#gamemap    td.floor    { background-color: saddlebrown; color: moccasin; }
-#gamemap    td.grass    { background-color: green;       color: lawngreen; }
-#gamemap    td.water    { background-color: dodgerblue;  color: darkturquoise; }
-#gamemap    td.lava     { background-color: crimson;     color: tomato; }
+    body, html, pre       { margin: 0; padding: 0; border: 0; }
 
-#gamemap tr td.player   { color: cyan; }
-#gamemap tr td.person   { color: white; }
-#gamemap tr td.monster  { color: red; }
-#gamemap tr td.item     { color: green; }
-#gamemap tr td.treasure { color: gold; }
-#gamemap tr td.door     { color: silver; font-weight: bold; }
+    body                  { background-color: #eee; }
+    #gamemap              { border-collapse: collapse; }
+    #gamemap td           { height: 1em; width: 1em; background-color: black; color: white; overflow: hidden;
+                            margin: 0; padding: 0; border: 0; text-align: center; vertical-align: middle; }
+
+    /* withhold a tr from the rule for tilekinds to force a precedence loss */
+    #gamemap    td.wall     { background-color: dimgray;     color: gray; }
+    #gamemap    td.floor    { background-color: saddlebrown; color: moccasin; }
+    #gamemap    td.grass    { background-color: green;       color: lawngreen; }
+    #gamemap    td.water    { background-color: dodgerblue;  color: darkturquoise; }
+    #gamemap    td.lava     { background-color: crimson;     color: tomato; }
+
+    /* add a tr to the rule for topkinds to force a precedence win */
+    #gamemap tr td.player   { color: cyan; }
+    #gamemap tr td.person   { color: white; }
+
+    #gamemap tr td.reptile  { color: green; }
+    #gamemap tr td.worm     { color: puce; }
+
+    #gamemap tr td.item     { color: blue; }
+    #gamemap tr td.treasure { color: gold; }
+    #gamemap tr td.door     { color: silver; font-weight: bold; }
 
 [Step 8](todo whargarbl)
+
+----
+
+# Why are items map features?
+
+So, they aren't, is the short version.  Let's change `@` to mean "forced player starting point on this map," which suggests it's optional; let's change the monster symbols to mean "this is a forced monster spawn," treasure to mean treasure spawn, &amp;c.  Then we can just have the map scanner instantiate things it finds.  `:)`
+
+First let's free the player from their being a map feature.
+
+When we render a cell, currently we ask the cell what it contains.  That means the cell is responsible for knowing where things are, instead of the (currently non-existent) feature containers.  This is a mistake.
+
+Let's make feature containers (items, monsters, traps, &amp;c.)
+
+There is only one player, so the feature container for a player is a singleton.  Initially we will track nothing but their location, which we will default to `(0,0)` for now.  We will take an options argument to allow that default location to be overridden.
+
+    function makePlayer(opts) {
+
+      return {
+        x: opts.x || 0,
+        y: opts.y || 0
+      };
+
+    }
+
+    var player = null;
+
+Next let's beef up the row that creates from an '@' cell in the string map, to instead actually create a player object after validating that's the right thing to do:
+
+    case '@' :
+      if (player) { throw 'cannot have two player spawn points on one stringMap!'; }
+      player     = makePlayer({ x: i, y: j });
+      tileKind   = 'floor';
+      tileSymbol = '.';
+      break;
+
+Next we need to add some goo in `htmlRepresentation` that checks the other sources (currently only player) before deciding what to render.
+
+    htmlRepresentation: function() {
+
+      var isPlayer   = (player !== null) && (i === player.x) && (j === player.y),
+          uTopKind   = isPlayer? 'player' : topKind,
+          uTopSymbol = isPlayer? '@'      : topSymbol,
+          tclass     = (uTopKind? (uTopKind + ' ') : '') + tileKind,
+          tconts     = (uTopSymbol? uTopSymbol : tileSymbol);
+
+      return '<td class="' + tclass + '">' + tconts + '</td>';
+
+    }
+
+If you save and load now, the player is no longer a map feature, but there's no way to see that &hellip; until you make them move.
+
+At this time I'm going to add a keyboard handling library called "mousetrap" to the HTML, to handle key binding.  And then we'll give this hilariously incorrect initial implementation of movement:
+
+    Mousetrap.bind('up',    function() { player.y -= 1; Render(); });
+    Mousetrap.bind('right', function() { player.x += 1; Render(); });
+    Mousetrap.bind('down',  function() { player.y += 1; Render(); });
+    Mousetrap.bind('left',  function() { player.x -= 1; Render(); });
+
+We should also split the render apart from the initial string parse, and track the map and string map separately, because that matters now:
+
+    var player  = null,
+        map     = null,
+        str_map = '##+#########' +  // todo: remove player, creatures, objects
+                '\n#@....######' +
+                '\n#...R.##...#' +
+                '\n#.$...##.p.#' +
+                '\n###+####...#' +
+                '\n###....+..p#' +
+                '\n########...#' +
+                '\n############';
+
+    function Render() {
+      document.body.innerHTML = RenderMap(map);
+    }
+
+    function onStart() {
+      map = mapStringToGameMap(str_map);
+      Render();
+    }
+
