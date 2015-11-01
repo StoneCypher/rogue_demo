@@ -1,6 +1,21 @@
-body, html, pre { margin: 0; padding: 0; border: 0; }
+body, html, pre       { margin: 0; padding: 0; border: 0; }
 
-body            { background-color: #eee; }
-#gamemap        { border-collapse: collapse; }
-#gamemap td     { height: 1em; width: 1em; background-color: black; color: white; overflow: hidden;
-                  margin: 0; padding: 0; border: 0; text-align: center; vertical-align: middle; }
+body                  { background-color: #eee; }
+#gamemap              { border-collapse: collapse; }
+#gamemap td           { height: 1em; width: 1em; background-color: black; color: white; overflow: hidden;
+                        margin: 0; padding: 0; border: 0; text-align: center; vertical-align: middle; }
+
+/* withhold a tr from the rule for tilekinds to force a precedence loss */
+#gamemap    td.wall     { background-color: dimgray;     color: gray; }
+#gamemap    td.floor    { background-color: saddlebrown; color: moccasin; }
+#gamemap    td.grass    { background-color: green;       color: lawngreen; }
+#gamemap    td.water    { background-color: dodgerblue;  color: darkturquoise; }
+#gamemap    td.lava     { background-color: crimson;     color: tomato; }
+
+/* add a tr to the rule for topkinds to force a precedence win */
+#gamemap tr td.player   { color: cyan; }
+#gamemap tr td.person   { color: white; }
+#gamemap tr td.monster  { color: red; }
+#gamemap tr td.item     { color: green; }
+#gamemap tr td.treasure { color: gold; }
+#gamemap tr td.door     { color: silver; font-weight: bold; }

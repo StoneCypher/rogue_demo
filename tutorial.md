@@ -387,7 +387,11 @@ First, the `cell` is (initially) simple enough: take an input, bind it to a clos
       };
     }
 
-## Using the map cell
+[Step 6](todo whargarbl)
+
+# Using the map cell
+
+It's time to start actually leveraging our map.
 
 Next we change the string map consumer to apply the individual characters as the cell argument, instead of to just return them as an array.  Simple enough: map that array with the `cell` call.
 
@@ -400,9 +404,67 @@ Concomitantly, we need to alter the cell renderer to use the representation meth
 And if we look, we *now* have a semi-real game map with active cells.  For example, let's do (in a bad way) a little work to highlight the player.  First, we'll add another instance variable to the cell (**temporarily**) called isPlayer, and if it's there, we'll change the cell color.
 
     function cell(input) {
+
       var content  = input,
           isPlayer = (input === '@');
+
       return {
         htmlRepresentation: function() { return isPlayer? ('<span style="color:blue">' + content + '</span>') : content; }
       };
+
     }
+
+This is fairly useless and terrible, but it shows that our map is actively being interpreted.
+
+Styling inside the table cells is silly.  Let's style the table cells directly.  That means transferring the ownership of the `<td>` into the class, so let's start there.
+
+First, the representation call changes as so (we'll change it to green so we know it's the new code working):
+
+    htmlRepresentation: function() {
+      var style = isPlayer? 'color: green' : '';
+      return '<td style="' + style + '">' + content + '</td>';
+    }
+
+Next, `RenderCell` kind of doesn't need to exist anymore: all it did was wrap the `cell` class' render method in a `<td>`, and that is now provided.  So we can call the `cell` class' render method directly with an arrow function to make the access, and burn `RenderCell`.
+
+    RenderRow = row => '<tr>' + (row.map( cell => cell.htmlRepresentation() ).join('')) + '</tr>',
+
+This now means that the `cell` can style the table cell directly.  Let's teach it about that.
+
+[Step 7](todo whargarbl)
+
+----
+
+Let's start in the CSS by creating a few rules.  One for walls, one for floors, one for players, one for doors, one for monsters (just for now,) one for items (also for now), and one for simple treasure.
+
+Initially we'll start with walls, floors, and the player, to get the infrastructure together; then we'll do the rest.
+
+We're going to need effectively two styles for every cell: the base and the top.  This is because the base will be the tile type (floor, lava, grass, trap, water, whatever), and there might be something (or many things) on top of it, such as a monster or treasure or whatever.
+
+Usually, though not always, the top style will let the bottom background color through; rarely, but occasionally, it will also let the bottom foreground color through.  Each of these should be possible in our system.  It would also be nice if either could do other things, such as invoking font styling or whatever.
+
+One way to achieve this is through CSS precedence.  Make a slightly more specific rule for top rules (we will use `<tr>` in the top rules but not in the bottom rules to get this result.)  Let the cascade handle the rest.
+
+#gamemap    td.wall   { background-color: dimgray;     color: silver; }
+#gamemap    td.floor  { background-color: saddlebrown; color: moccasin; }
+
+#gamemap tr td.player { color: cyan; }
+
+This allows the player to stand on floor and get a brown background, but to override the floor's yellowish foreground with cyan.
+
+Now we extend this to the other rules we want initially:
+
+#gamemap    td.wall     { background-color: dimgray;     color: gray; }
+#gamemap    td.floor    { background-color: saddlebrown; color: moccasin; }
+#gamemap    td.grass    { background-color: green;       color: lawngreen; }
+#gamemap    td.water    { background-color: dodgerblue;  color: darkturquoise; }
+#gamemap    td.lava     { background-color: crimson;     color: tomato; }
+
+#gamemap tr td.player   { color: cyan; }
+#gamemap tr td.person   { color: white; }
+#gamemap tr td.monster  { color: red; }
+#gamemap tr td.item     { color: green; }
+#gamemap tr td.treasure { color: gold; }
+#gamemap tr td.door     { color: silver; font-weight: bold; }
+
+[Step 8](todo whargarbl)
