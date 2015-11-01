@@ -560,3 +560,66 @@ We should also split the render apart from the initial string parse, and track t
       Render();
     }
 
+And now your little dude can move - though he has no bounds, like walking through walls, or off of the map.  Let's fix that next.
+
+[Step 9](todo whargarbl)
+
+----
+
+# Gulp, Babel, and Browserify
+
+Actually I lied.  Twice.  First I said I didn't want to set up a babel system, and then I said let's fix movement next.
+
+The thing is, a lot of this is easier if we have full ES6, and the code is getting a little bit cumbersome; I'd like to break it up.
+
+So let's build a quick gulp system (this implies having `node.js` set up) that uses `babel` to take modern code you write and "transpile" (convert) it to older JS that all browsers can eat; then let's also use `browserify` to package that up so that we don't have to think about it.
+
+So.  I will assume that you have `node.js` installed, which comes with `npm`, a package manager.  If not, [go here and install it](https://nodejs.org/en/download/) before continuing.  It's quite easy.
+
+Go into a console or command prompt, and go into your project directory.  Type `npm init`.  You can hit return and accept all those default values if you want to, or you can add descriptive text and whatever (probably just hit return until it shuts up.)
+
+Now if you look again, it created a file called `package.json`.  That is the way that an `npm` project is defined.
+
+Please next type `npm install`.  That should appear to do nothing.  If you look, it'll create an empty directory called `node_modules`.  That's where things that `npm` installs go.  The current behavior is because the current project's install list is empty.
+
+Let's add a few things to that install list - specifically
+
+1. `gulp` - an automation tool so that we can not hand-do things
+1. `gulp-babel` - a gulp wrapper for a tool that converts modern JS (and other things) to portable JS
+1. `browserify` - a tool that packages your various JS together
+1. `del` - a tool for deleting directories
+
+How?
+
+`npm install --save-dev gulp gulp-babel browserify del`
+
+(this may take a bit)
+
+When you write `--save-dev` you're telling the system to save this as a "dev dependency."  A dependency is something `npm` will install in production.  A dev dependency is something `npm` will only install on developer machines.  So for example, if you use a documentation generation tool, it should be a dev dependency, because production doesn't need it.  (Most things should be dev dependencies.)
+
+## Gulpfile
+
+The `gulpfile.js` is where you keep the various steps that the build system will take for you.  We'll just start it out with saying hello, to show that it works.
+
+Please create a `gulpfile.js` with the following contents:
+
+    var gulp  = require('gulp');
+
+    gulp.task('default', function() {
+      console.log('hello, i am gulp');
+    });
+
+And then go to your console and type gulp from your project directory, which should say something like
+
+    John@SINISTAR4000 /c/projects/rogue_demo (master)
+    $ gulp
+    [13:51:33] Using gulpfile c:\projects\rogue_demo\gulpfile.js
+    [13:51:33] Starting 'default'...
+    hello, i am gulp
+    [13:51:33] Finished 'default' after 5.18 ms
+
+We now have a trivial, pointless, working gulpfile.  Let's give it a raison d'être.
+
+First, a simplistic build system.  We'll begin with a thing that destroys a build directory that doesn't yet exist.
+
+----

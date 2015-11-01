@@ -10,19 +10,16 @@ function makePlayer(opts) {
 
 }
 
-var player = null;
-var map
-
-var str_map = '##+#########' +  // todo: remove player, creatures, objects
+var player  = null,
+    map     = null,
+    str_map = '##+#########' +  // todo: remove player, creatures, objects
             '\n#@....######' +
             '\n#...R.##...#' +
             '\n#.$...##.p.#' +
             '\n###+####...#' +
             '\n###....+..p#' +
             '\n########...#' +
-            '\n############',
-
-    map = null;
+            '\n############';
 
 function cell(input, i,j) {
 
