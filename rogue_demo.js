@@ -1,3 +1,6 @@
+
+'use strict';
+
 var str_map = '##+#########' +  // todo: remove player, creatures, objects
             '\n#@....######' +
             '\n#...R.##...#' +
@@ -7,24 +10,17 @@ var str_map = '##+#########' +  // todo: remove player, creatures, objects
             '\n########...#' +
             '\n############';
 
-var map = [ [ '#', '#', '+', '#', '#', '#', '#', '#', '#', '#', '#', '#' ], // todo: remove player, creatures, objects
-            [ '#', '@', '.', '.', '.', '.', '#', '#', '#', '#', '#', '#' ],
-            [ '#', '.', '.', '.', 'R', '.', '#', '#', '.', '.', '.', '#' ],
-            [ '#', '.', '$', '.', '.', '.', '#', '#', '.', 'w', '.', '#' ],
-            [ '#', '#', '#', '+', '#', '#', '#', '#', '.', '.', '.', '#' ],
-            [ '#', '#', '#', '.', '.', '.', '.', '=', '.', '.', 'w', '#' ],
-            [ '#', '#', '#', '#', '#', '#', '#', '#', '.', '.', '.', '#' ],
-            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
-            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
-            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
-            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
-            [ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' ],
-          ];
+function cell(input) {
+  var content = input;
+  return {
+    htmlRepresentation: function() { return content; }
+  };
+}
 
-var RenderCell =              cell => '<td>' + cell.toString() + '</td>',
-    RenderRow  =               row => '<tr>' + (row.map(RenderCell).join('')) + '</tr>',
-    RenderMap  =           mapdata => '<table id="gamemap"><tbody>' + (mapdata.map(RenderRow).join('')) + '</tbody></table>',
-    mapStringToGameMap = mapString => mapString.split('\n').map( row => row.split('') );
+var RenderCell         =      cell => '<td>' + cell.htmlRepresentation() + '</td>',
+    RenderRow          =       row => '<tr>' + (row.map(RenderCell).join('')) + '</tr>',
+    RenderMap          =   mapdata => '<table id="gamemap"><tbody>' + (mapdata.map(RenderRow).join('')) + '</tbody></table>',
+    mapStringToGameMap = mapString => mapString.split('\n').map( row => row.split('').map(chr => cell(chr)) );
 
 function onStart() {
   document.body.innerHTML = RenderMap(mapStringToGameMap(str_map));

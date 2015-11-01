@@ -114,6 +114,8 @@ Your end result should look something like this:
 
 Save that and the HTML in some directory (the HTML source expects the JS to be called `rogue_demo.js`,) and open the index; you should now see a shitty, fully JS map being rendered.
 
+[Step 1](todo whargarbl)
+
 ----
 
 # An Aside
@@ -189,8 +191,6 @@ So that looks something like (don't worry, I'll de-horrible this afterwards):
 Now, obviously you don't want to write maps like that by hand.  But, already some improvements are obvious: the newlines are gone, the math to see what's north or south is just add one or subtract one, it's straightforward to blot out regions, et cetera.
 
 Later, we'll go back and resurrect map strings, because they matter a lot.  But for now, let's get this new one working.
-
-[Step 1](todo whargarbl)
 
 ## Now we render this new map as a `<table>`
 
@@ -362,4 +362,47 @@ Let's also add some rules to the map cells that prevent overflow, that strip out
 
 Now things look dramatically less awful.  Let's get some active map behavior in, so that we can get properly started.
 
+Fortunately we can start making faster steps now, too.
+
 [Step 4](todo whargarbl)
+
+----
+
+# Let's interpret the map
+
+So right now we're having the map fly blind on strings.  That's awful.  It's a nice bootstrapping notation but it won't do properly.  Let's have it be interpreted into something reasonable, instead; then we can get a better map to be rendered.
+
+We need two pieces to safely undo that; afterwards we can do whatever dumb thing we like.  First, we need to make a cell object, instead of just some single letter string; second, we need to modify the table builder to call the ostensible method on the cell class which tells it what to contain.
+
+Honestly I'd like to do the cell object as an ES6 class, but your browser probably doesn't support them by default yet, and I don't want to cover `babel` this morning.
+
+## Making a map cell
+
+First, the `cell` is (initially) simple enough: take an input, bind it to a closure variable, return an object that craps out the closure variable on request.  Cool.
+
+    function cell(input) {
+      var content = input;
+      return {
+        htmlRepresentation: function() { return content; }
+      };
+    }
+
+## Using the map cell
+
+Next we change the string map consumer to apply the individual characters as the cell argument, instead of to just return them as an array.  Simple enough: map that array with the `cell` call.
+
+    mapStringToGameMap = mapString => mapString.split('\n').map( row => row.split('').map(chr => cell(chr)) );
+
+Concomitantly, we need to alter the cell renderer to use the representation method, since it's no longer able to just dump in string contents.
+
+    RenderCell = cell => '<td>' + cell.htmlRepresentation() + '</td>',
+
+And if we look, we *now* have a semi-real game map with active cells.  For example, let's do (in a bad way) a little work to highlight the player.  First, we'll add another instance variable to the cell (**temporarily**) called isPlayer, and if it's there, we'll change the cell color.
+
+    function cell(input) {
+      var content  = input,
+          isPlayer = (input === '@');
+      return {
+        htmlRepresentation: function() { return isPlayer? ('<span style="color:blue">' + content + '</span>') : content; }
+      };
+    }
