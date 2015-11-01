@@ -11,10 +11,14 @@ var str_map = '##+#########' +  // todo: remove player, creatures, objects
             '\n############';
 
 function cell(input) {
-  var content = input;
+
+  var content  = input,
+      isPlayer = (input === '@');
+
   return {
-    htmlRepresentation: function() { return content; }
+    htmlRepresentation: function() { return isPlayer? ('<span style="color:blue">' + content + '</span>') : content; }
   };
+
 }
 
 var RenderCell         =      cell => '<td>' + cell.htmlRepresentation() + '</td>',
