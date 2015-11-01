@@ -566,7 +566,7 @@ And now your little dude can move - though he has no bounds, like walking throug
 
 ----
 
-# Gulp, Babel, and Browserify
+# Gulp
 
 Actually I lied.  Twice.  First I said I didn't want to set up a babel system, and then I said let's fix movement next.
 
@@ -609,7 +609,11 @@ Please create a `gulpfile.js` with the following contents:
       console.log('hello, i am gulp');
     });
 
-And then go to your console and type gulp from your project directory, which should say something like
+A "gulp task" is gulp's concept of a unit of work; that's something it's meant to go get done.  They always have a name, and they may have either a list of other tasks to be done first, or a function that is what they do, or both.
+
+One task name is special: 'default', which is the task that gets run if you don't name one specifically.  Well written gulpfiles almost always have a default task.
+
+Now go to your console and type gulp from your project directory, which should say something like
 
     John@SINISTAR4000 /c/projects/rogue_demo (master)
     $ gulp
@@ -622,4 +626,208 @@ We now have a trivial, pointless, working gulpfile.  Let's give it a raison d'ê
 
 First, a simplistic build system.  We'll begin with a thing that destroys a build directory that doesn't yet exist.
 
+    var gulp  = require('gulp'),
+        del   = require('del');
+
+    gulp.task('clean', function(cb) {
+      return del(['./build'], cb);
+    });
+
+    gulp.task('default', ['clean'], function() {
+      console.log('hello, i am gulp');
+    });
+
+Notice that we have added an array as a second parameter to the original 'default' task.  That's the list of other tasks to get done first, which we'd mentioned earlier.
+
+Notice also that the new gulp task takes `cb` as an argument, whereas the other did not.  This is because the gulp task needs a way to know when `del` is done before allowing it to declare itself done, and `cb` (callback) is how `del` tells `gulp` what's going on.  The task needs that to ensure that the lists of predecessor tasks are finished before the current task starts (so that we know that we've finished compiling stuff before we copy the results, or whatever.)
+
+Now, if you go into your project directory and create a subdirectory called build, and run gulp, you'll notice it's silently destroyed, along with anything inside it.  That's our goal; we want to "nuke it from orbit, [as] that's the only way to be sure."  The 'build' directory will be automatically made and destroyed, and you shouldn't interact with it except to load its current contents in a browser.
+
+Let's next actually have the gulp system make that directory, too.  For now it's just one directory:
+
+    gulp.task('make-dirs', ['clean'], function(cb) {
+      fs.mkdirSync('./build');
+      return cb();
+    });
+
+Also, we need to add `fs` into the require list (but we don't need to `npm install` it because it's a standard part of node.)
+
+    var gulp = require('gulp'),
+        del  = require('del'),
+        fs   = require('fs');
+
+Finally, because `clean` will be run by `make-dirs`, then we can just make the `default` task run `make-dirs` and not worry about it:
+
+    gulp.task('default', ['make-dirs'], function() {
+
+At this point, if you make a build directory, throw stuff into it, then run `gulp`, your build directory should be emptied destroyed silently, and a new empty one made in its place.
+
+Next let's put a lame proof-of-concept `babel` build system in place `:)`
+
+[Step 10](todo whargarbl)
+
 ----
+
+# Babel
+
+This is why we're actually doing the gulp system: to get access to proper ES6, which will simplify our other code a lot.  However, one of the pieces that we want the most badly (`import`/`export`) won't be available until we do the step after this one too (`browserify`.)
+
+Before we get started, let's give you an idea of what `babel` actually does.
+
+You can play with `babel` in [the babel REPL](https://babeljs.io/repl/), but two quick examples are probably good enough.
+
+## Simple `babel`
+
+So, suppose I want to write some ES6.  I'd like to write an arrow function.  Many browsers don't do those yet.  I'd love it if I had a tool which took those and crapped out portable ES5 for me.
+
+The code I want to write:
+
+    [1,2,3].map(i => i * 2);
+
+Babel will turn that into:
+
+    "use strict";
+
+    [1, 2, 3].map(function (i) {
+      return i * 2;
+    });
+
+And that will run pretty much anywhere.
+
+## Less simple `babel`
+
+The code I want to write:
+
+    class TwoFourSix {
+
+      asArray() { [1,2,3].map(i => i * 2); }
+
+    };
+
+Babel will turn that into:
+
+    "use strict";
+
+    var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+    var TwoFourSix = (function () {
+      function TwoFourSix() {
+        _classCallCheck(this, TwoFourSix);
+      }
+
+      _createClass(TwoFourSix, [{
+        key: "asArray",
+        value: function asArray() {
+          [1, 2, 3].map(function (i) {
+            return i * 2;
+          });
+        }
+      }]);
+
+      return TwoFourSix;
+    })();
+
+## Okay so we get `babel`; let's use it
+
+Let's get started.
+
+Like the other steps, we'll start with the smallest thing we can call a success, then build on that incrementally more confidently.
+
+First, a config file for `babel`.  We'll keep config files in a new directory called `config`, so this file is `config/babel.json`.
+
+    {
+      "presets": ["babel-preset-es2015"]
+    }
+
+Next, we'll load that in the gulpfile:
+
+    var babel_cfg = require('./config/babel.json');
+
+Now we can make a `gulp task` that handles this transformation for us.
+
+    gulp.task('babel', function() {
+      return gulp.src('./src/*.js')
+        .pipe( babel(babel_cfg) )
+        .pipe( gulp.dest('./build/js') );
+    });
+
+We should also update the `make-dirs` task to create a subdir `js` of the build directory for us:
+
+    ['./build', './build/js'].map(dir => fs.mkdirSync(dir));
+
+So, `gulp.src` fetches files from disk according to a `glob` pattern; `.pipe` sends whatever we have to a next step, `babel()` is the thing that causes the actual transformation, and `gulp.dest` writes things to disk (note it's going to a subdirectory of the build directory.)
+
+This task loads files from our `./src` directory, which is notable because that directory doesn't exist yet.  Let's make it, and put a simple JS in with the first one-liner example `[1,2,3].map(i => i * 2);` in it, under the name `bootstrap.js`.
+
+And now if you run gulp, you'll see that the build directory contains a subdirectory called `js`, which contains a file called `bootstrap`, that has the ES5 version of our more modern code in it.  Hurrah!  We can write better stuff.
+
+Next, it's `browserify` time.
+
+----
+
+## What was that `browserify` bit?
+
+So, the loading of scripts situation in Javascript is just a mess.  There are several competing historical third party standards; no browser supports those directly; there is an ES6 standard; no browser supports that directly outside experimental mode; and `babel` can translate the ES6 system back to the `node.js`-relevant third party ES5 system.
+
+So if we load a packager for that specific ES5 system ("commonjs,") then `babel` can handle the rest, and we're good to go.
+
+There are a lot of such packagers, such as `webpack`, `jspm`, `requirejs`, `qoopido.demand`, and so on.  We're going to go with `browserify`, because compared to the others it's simpler.
+
+It is still, admittedly, a little complex.
+
+What these things actually do is accept a list of places they should start looking, then dig through them looking for `require()` calls, then load those targets, then dig, then ... , building out a physical dependency tree; then they package up all those dependencies inside some boilerplate that all makes it work from inside a single file.  And pow: there's your one script with its nine libraries and fifty subscripts in a single file.
+
+The reason we care about this is that our current single file is getting ungainly, stupid, and overcomplicated, and it barely even exists yet.  It's chopping time.
+
+First, we need a minimalist file to package to show a running package.  We create a `src/app.js` that just contains `window.alert('app!');` so that we can see the bundle running once it starts.
+
+Next, a `gulp task`, so that we don't actually have to think about it at all.
+
+    gulp.task('browserify', ['babel'], function() {
+
+      return browserify(browserify_cfg, { "debug" : !production })
+
+        .require("./build/js/app.js", { "expose" : "app" })
+
+        .bundle()
+        .on("error", errorHandler)
+        .pipe(source("bundle.js"))
+        .pipe(gulp.dest('./build/js'));
+
+    });
+
+What this does:
+
+1. `browserify()` is the packaging system we discussed
+1. The `production` bit mostly just tells it whether to write sourcemaps (not today thanks)
+1. The `.require` tells it to use `app.js` as a module, and the `expose` tells it to make that module available to others under that name
+1. `.bundle()` is the "ok it's time to go" flag
+1. `source("bundle.js")` is using a tool called "vinyl source streams" to provide the single packaged up file (weird name, I know)
+1. And the `.dest` puts it on disk under that name in the build location.
+
+Notice also that there's a `browserify_cfg` there.  That's a JSON config file, like the `babel` one, and we ought to set it up too.  So go make a `config/browserify.json`, and toss this inside:
+
+    {
+      "entries" : ["./build/js/bootstrap.js"]
+    }
+
+> "What is bootstrap.js?"
+
+It's a new file.  Its only purpose is to invoke `app` so that browserify will build a `require()` tree there.  This is an artifact of browsers not having modern ES6 packaging support.  Just make a `src/bootstrap.js` and toss in `var App = require('app');`, and we're good.
+
+Update your gulpfile's default task to point at `browserify`, and continue:
+
+    gulp.task('default', ['browserify']);
+
+Now, in theory, we have a running packaging system.  We'll need to add a line to our HTML to point at the bundle now:
+
+    <script defer type="text/javascript" src="build/js/bundle.js"></script>
+
+And if you reload, you should get an alert box with your existing roguelike.  Which means your `browserify` and `babel` setup are done. `:D`
+
+> "What the hell was that for?"
+
+That's coming next `:D`
+

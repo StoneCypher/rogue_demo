@@ -1,6 +1,8 @@
 
 'use strict';
 
+var Mousetrap = require('mousetrap');
+
 function makePlayer(opts) {
 
   return {
