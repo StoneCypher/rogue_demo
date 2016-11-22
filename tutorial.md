@@ -1,3 +1,5 @@
+`This is sourced from a reddit thread`
+
 It's straight up trivial.  Also, look into ZAngband - more content, less trying to be funny.
 
 The phrase you're looking for is "roguelike development."  This turns out to be a long standing dev community (except for the javascript part.)
